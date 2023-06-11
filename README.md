@@ -1,2 +1,1 @@
-# leap_momentum
-MITgcm Global LLC4320 Simulations
+# Summer 2023 LEAP Momentum Fellowship
