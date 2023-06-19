@@ -1,6 +1,6 @@
 import torch
 from torchvision.utils import save_image
-
+import matplotlib.pyplot as plt
 
 class AdjustLearningRate:
     num_of_iterations = 0
@@ -39,9 +39,18 @@ def load_checkpoint(checkpoint_file, model, optimizer, lr):
         param_group["lr"] = lr
 
 
-def save_examples(x, y, y_fake, counter, saving_path):
+def save_examples(x, y, y_fake, dataset, counter, saving_path):
 
-    save_image(y_fake * 0.5 + 0.5, saving_path + f"/y_gen_{counter}.png")
-    save_image(x * 0.5 + 0.5, saving_path + f"/input_{counter}.png")
-    save_image(y * 0.5 + 0.5, saving_path + f"/label_{counter}.png")
+    # save_image(x * dataset.inputs_mean_std[1] + dataset.inputs_mean_std[0], saving_path + f"/input_{counter}.png")
+    # save_image(y_fake * dataset.targets_mean_std[1] + dataset.targets_mean_std[1], saving_path + f"/y_gen_{counter}.png")
+    # save_image(y * dataset.targets_mean_std[1] + dataset.targets_mean_std[1], saving_path + f"/label_{counter}.png")
+    fig, axes = plt.subplots(nrows= x.shape[0], ncols=3, figsize=(14, 15), constrained_layout=True)
+    for idx in range(x.shape[0]):
+        image = x[idx].detach().cpu().numpy() * dataset.inputs_mean_std[1] + dataset.inputs_mean_std[0]
+        target = y[idx].detach().cpu().numpy() * dataset.targets_mean_std[1] + dataset.targets_mean_std[0]
+        gen_target = y_fake[idx].detach().cpu().numpy() * dataset.targets_mean_std[1] + dataset.targets_mean_std[0]
+        axes[idx, 0].imshow(image.transpose(1, 2, 0))
+        axes[idx, 1].imshow(target.transpose(1, 2, 0))
+        axes[idx, 2].imshow(gen_target.transpose(1, 2, 0))
+    plt.savefig(f'{saving_path}/{counter}.png', format='png', bbox_inches='tight', pad_inches=0.1)
 
