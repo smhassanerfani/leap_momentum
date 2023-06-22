@@ -52,10 +52,11 @@ def load_checkpoint(checkpoint_file, model, optimizer, lr):
     print("Loading Checkpoint...")
     checkpoint = torch.load(checkpoint_file)
     model.load_state_dict(checkpoint["state_dict"])
-    optimizer.load_state_dict(checkpoint["optimizer"])
-
-    for param_group in optimizer.param_groups:
-        param_group["lr"] = lr
+    if optimizer is not None:
+        optimizer.load_state_dict(checkpoint["optimizer"])
+    if lr is not None:
+        for param_group in optimizer.param_groups:
+            param_group["lr"] = lr
 
 
 def save_examples(x, y, y_fake, transform_params, counter, saving_path):
@@ -76,4 +77,77 @@ def save_examples(x, y, y_fake, transform_params, counter, saving_path):
     plt.close()
     
     del x, y, y_fake
+    
 
+def plot_examples(inp, tar, gen, saving_path=None):
+    
+    fig, axes = plt.subplots(nrows= 1, ncols=3, figsize=(12, 3), constrained_layout=True)
+
+    xr.DataArray(inp.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[0])
+    axes[0].set_title('Raw SSH')
+    
+    xr.DataArray(tar.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[1])
+    axes[1].set_title('Internal Tides')
+    
+    xr.DataArray(gen.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[2])
+    axes[2].set_title('Internal Tides (M)')
+    
+    if saving_path:
+        plt.savefig(f'{saving_path}/{counter}.png', format='png', bbox_inches='tight', pad_inches=0.1)
+        plt.close()
+
+    
+
+def qqplot(y_test, y_pred, yax1='Depth (m)' ,axis_names=None, site_name=None, quantiles=None):
+
+    fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3, figsize=(12, 4), constrained_layout=True)
+
+    if axis_names is None:
+        y_test_name='GT'
+        y_pred_name='MODEL'
+    else:
+        y_test_name=axis_names[0]
+        y_pred_name=axis_names[1]
+
+    ax1.boxplot([y_test, y_pred])
+
+    ax1.set_xticklabels([y_test_name, y_pred_name])
+    ax1.tick_params(axis='x', labelrotation=0, labelsize=12)
+    ax1.set_ylabel(yax1)
+    ax1.grid(True)
+    # ax1.set_title(f'BOX PLOT')
+
+    x1 = np.sort(y_test)
+    y1 = np.arange(1, len(y_test) + 1) / len(y_test)
+    ax2.plot(x1, y1, linestyle='none', marker='o', alpha=0.2, label=y_test_name)
+    # ax2.plot(x1, y1, linestyle='-', alpha=0.8, label='GT')
+
+    x2 = np.sort(y_pred)
+    y2 = np.arange(1, len(y_pred) + 1) / len(y_pred)
+    # ax1.plot(x2, y2, linestyle='none', marker='.', alpha=0.5, label='GT')
+    ax2.plot(x2, y2, linestyle='-.', alpha=1, label=y_pred_name)
+
+    # ax2.set_title(f'ECDF')
+    ax2.legend()
+
+    if quantiles is None:
+        quantiles = min(len(y_test), len(y_pred))
+    quantiles = np.linspace(start=0, stop=1, num=int(quantiles))
+
+    x_quantiles = np.quantile(y_test, quantiles, method='nearest')
+    y_quantiles = np.quantile(y_pred, quantiles, method='nearest')
+
+    ax3.scatter(x_quantiles, y_quantiles)
+    # ax3.plot([0, 100], [0, 100], '--', color = 'black', linewidth=1.5)
+
+    max_value = np.array((x_quantiles, y_quantiles)).max()
+    ax3.plot([0, max_value], [0, max_value], '--', color='black', linewidth=1.5)
+
+    ax3.set_xlabel(y_test_name)
+    ax3.set_ylabel(y_pred_name)
+    # ax3.set_title(f'Q-Q PLOT')
+
+    if site_name is not None:
+        plt.savefig(f'./{site_name}.pdf', format='pdf', bbox_inches='tight', pad_inches=0.05)
+
+    plt.show()
