@@ -3,6 +3,7 @@ from torchvision.utils import save_image
 import matplotlib.pyplot as plt
 import xarray as xr
 import csv
+import numpy as np
 
 def csv_writer(logger, save_path):
 
@@ -83,13 +84,13 @@ def plot_examples(inp, tar, gen, saving_path=None):
     
     fig, axes = plt.subplots(nrows= 1, ncols=3, figsize=(12, 3), constrained_layout=True)
 
-    xr.DataArray(inp.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[0])
+    xr.DataArray(inp.squeeze(), dims=['x', 'y']).plot(x="x", y="y", vmax=inp.max(), vmin=inp.min(), robust=True, yincrease=False, cmap='RdBu_r', ax=axes[0])
     axes[0].set_title('Raw SSH')
     
-    xr.DataArray(tar.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[1])
+    xr.DataArray(tar.squeeze(), dims=['x', 'y']).plot(x="x", y="y", vmax=tar.max(), vmin=tar.min(), robust=True, yincrease=False, cmap='RdBu_r', ax=axes[1])
     axes[1].set_title('Internal Tides')
     
-    xr.DataArray(gen.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[2])
+    xr.DataArray(gen.squeeze(), dims=['x', 'y']).plot(x="x", y="y", vmax=tar.max(), vmin=tar.min(), robust=True, yincrease=False, cmap='RdBu_r', ax=axes[2])
     axes[2].set_title('Internal Tides (M)')
     
     if saving_path:
