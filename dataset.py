@@ -1,67 +1,44 @@
-import numpy as np
+import os
 import torch
-from torch.utils.data import Dataset
+import numpy as np
 import torchvision.transforms as T
+from typing import Any, Callable, Optional, Tuple
 
-
-class Agulhas(Dataset):
+class Agulhas(torch.utils.data.Dataset):
 
     def __init__(self, split, joint_transform=None):
         super(Agulhas, self).__init__()
+        
         self.split = split
+        self.inps_mean_std = (-0.4315792, 0.5710749)
+        self.tars_mean_std = (2.9930247e-06, 0.009364196)
 
         self.inputs, self.targets = self._get_data_array()
         self.joint_transform = joint_transform
 
-        self.input_transforms = T.Compose([T.ToTensor(), T.Normalize(*self.inputs_mean_std)])
-        self.target_transforms = T.Compose([T.ToTensor(), T.Normalize(*self.targets_mean_std)])
+        self.inps_transform = T.Compose([T.ToTensor(), T.Normalize(*self.inps_mean_std)])
+        self.tars_transform = T.Compose([T.ToTensor(), T.Normalize(*self.tars_mean_std)])
 
     def _get_data_array(self):
         
-        import xarray as xr
+        inps_path = os.path.join('dataset', self.split, 'inputs.npy')
+        tars_path = os.path.join('dataset', self.split, 'targets.npy')
+                                 
+        with open(inps_path, 'rb') as f:
+            inputs = np.load(f)
         
-        link1 = 'gs://leap-persistent/dhruvbalwada/ssh_reconstruction_project/unfiltered_data.zarr'
-        link2 = 'gs://leap-persistent/dhruvbalwada/ssh_reconstruction_project/filtered_data.zarr'
-        ds_unfiltered = xr.open_zarr(link1)
-        ds_filtered = xr.open_zarr(link2)
-        ds_it = ds_unfiltered['ssh_unfiltered'] - ds_filtered['ssh_filtered']
-
-        rng = np.random.default_rng(1948)
-        arr = np.arange(70)
-        rng.shuffle(arr)
-        
-        # if self.split == 'train':
-        inputs = ds_unfiltered['ssh_unfiltered'][arr[:49], 56:-56, 56:-56].fillna(0) 
-        targets = ds_it[arr[:49], 56:-56, 56:-56].fillna(0) 
-
-        self.inputs_mean_std = (inputs.mean().compute().item(), inputs.std().compute().item())
-        self.targets_mean_std = (targets.mean().compute().item(), targets.std().compute().item())
-        
-        if self.split == 'val':
-            inputs = ds_unfiltered['ssh_unfiltered'][arr[49:56], 56:-56, 56:-56].fillna(0) 
-            targets = ds_it[arr[49:56], 56:-56, 56:-56].fillna(0)
-        
-        if self.split == 'test': # test set:
-            inputs = ds_unfiltered['ssh_unfiltered'][arr[56:], 56:-56, 56:-56].fillna(0) 
-            targets = ds_it[arr[56:], 56:-56, 56:-56].fillna(0)
-        
-        inputs = inputs.coarsen(i=256, j=256, boundary="pad").construct(i=("x_coarse", "x_fine"), j=("y_coarse", "y_fine"))
-        inputs = inputs.stack(z=("x_coarse", "y_coarse"))[..., [i for i in range(64) if i not in [47, 54, 55, 62, 63]]]
-        inputs = inputs.reset_index("x_coarse").stack(z_time=("time", "z"))
-
-        targets = targets.coarsen(i=256, j=256, boundary="pad").construct(i=("x_coarse", "x_fine"), j=("y_coarse", "y_fine"))
-        targets = targets.stack(z=("x_coarse", "y_coarse"))[..., [i for i in range(64) if i not in [47, 54, 55, 62, 63]]]
-        targets = targets.reset_index("x_coarse").stack(z_time=("time", "z"))
+        with open(tars_path, 'rb') as f:
+            targets = np.load(f)
             
-        return inputs.values, targets.values
+        return inputs, targets
 
     def __getitem__(self, index):
         
         x = self.inputs[..., index]
         y = self.targets[..., index]
     
-        x = self.input_transforms(x)
-        y = self.target_transforms(y)
+        x = self.inps_transform(x)
+        y = self.tars_transform(y)
         
         if self.joint_transform:
             x, y = self.joint_transform(x, y)
@@ -70,3 +47,61 @@ class Agulhas(Dataset):
 
     def __len__(self):
         return self.inputs.shape[2]
+
+    
+    from typing import Any, Callable, Optional, Tuple
+
+    
+class MapDataset(torch.utils.data.Dataset):
+    def __init__(
+        self,
+        X_generator,
+        y_generator,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        joint_transform: Optional[Callable] = None,
+    ) -> None:
+        """
+        PyTorch Dataset adapter for Xbatcher
+
+        Parameters
+        ----------
+        X_generator : xbatcher.BatchGenerator
+        y_generator : xbatcher.BatchGenerator
+        transform : callable, optional
+            A function/transform that takes in an array and returns a transformed version.
+        target_transform : callable, optional
+            A function/transform that takes in the target and transforms it.
+        """
+        self.X_generator = X_generator
+        self.y_generator = y_generator
+        self.transform = transform
+        self.target_transform = target_transform
+        self.joint_transform = joint_transform
+
+    def __len__(self) -> int:
+        return len(self.X_generator)
+
+    def __getitem__(self, idx) -> Tuple[Any, Any]:
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+            if len(idx) == 1:
+                idx = idx[0]
+            else:
+                raise NotImplementedError(
+                    f"{type(self).__name__}.__getitem__ currently requires a single integer key"
+                )
+
+        X_batch = self.X_generator[idx].values
+        y_batch = self.y_generator[idx].values
+
+        if self.transform:
+            X_batch = self.transform(X_batch)
+
+        if self.target_transform:
+            y_batch = self.target_transform(y_batch)
+        
+        if self.joint_transform:
+            X_batch, y_batch = self.joint_transform([X_batch, y_batch])
+        
+        return X_batch, y_batch
