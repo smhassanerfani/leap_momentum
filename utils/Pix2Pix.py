@@ -46,7 +46,7 @@ def train_loop(discriminator, generator, dataloader, disc_optimizer, gen_optimiz
         running_disc_loss += D_loss.item() * x.size(0)
         running_gen_loss += G_loss.item() * x.size(0)
 
-        if batch % 50 == 0:
+        if batch % 200 == 0:
             disc_loss, gen_loss = D_loss.item(), G_loss.item()
             print(f"Discriminator Loss: {disc_loss:.5f}, Generator Loss: {gen_loss:.5f}")
 
