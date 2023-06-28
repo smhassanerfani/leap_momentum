@@ -39,3 +39,34 @@ class Transform(torch.nn.Module):
             mask = TF.vflip(mask)
         
         return image, mask
+
+class Transform2(torch.nn.Module):
+    
+    def __init__(self):
+       super().__init__()
+
+    def __call__(self, image, mask, mask_bm):    
+        # Resize
+#         resize = T.Resize(size=(512, 512))
+#         image = resize(image)
+#         mask = resize(mask)
+
+#         # Random crop
+#         i, j, h, w = T.RandomCrop.get_params(
+#             image, output_size=(256, 256))
+#         image = TF.crop(image, i, j, h, w)
+#         mask = TF.crop(mask, i, j, h, w)
+
+        # Random horizontal flipping
+        if random.random() > 0.5:
+            image = TF.hflip(image)
+            mask = TF.hflip(mask)
+            mask_bm = TF.hflip(mask_bm)
+
+        # Random vertical flipping
+        if random.random() > 0.5:
+            image = TF.vflip(image)
+            mask = TF.vflip(mask)
+            mask_bm = TF.vflip(mask_bm)
+        
+        return image, mask, mask_bm
