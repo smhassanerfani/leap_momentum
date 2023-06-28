@@ -84,7 +84,34 @@ def save_examples(x, y, y_fake, transform_params, counter, saving_path):
     # plt.close('all')
     
     del image, target, gen_target
+
+def save_examples2(x, y, y_fake, transform_params, counter, saving_path):
+    import matplotlib
+    matplotlib.use('Agg')
     
+    # fig, axes = plt.subplots(nrows= x.shape[0], ncols=3, figsize=(12, 13), constrained_layout=True)
+    
+    fig = figure.Figure(figsize=(20, 7), constrained_layout=True)
+    axes = fig.subplots(nrows= x.shape[0], ncols=5)
+    
+    for idx in range(x.shape[0]):
+    
+        image = x[idx].detach().cpu().numpy() * transform_params['inputs_std'] + transform_params['inputs_mean']
+        target_it = y[idx, 0, ...].detach().cpu().numpy() * transform_params['targets_std'] + transform_params['targets_mean']
+        target_bm = y[idx, 1, ...].detach().cpu().numpy() * transform_params['targets_bm_std'] + transform_params['targets_bm_mean']
+        gen_target_it = y_fake[idx, 0, ...].detach().cpu().numpy() * transform_params['targets_std'] + transform_params['targets_mean']
+        gen_target_bm = y_fake[idx, 1, ...].detach().cpu().numpy() * transform_params['targets_bm_std'] + transform_params['targets_bm_mean']
+
+        xr.DataArray(image.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[idx, 0])
+        xr.DataArray(target_it.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[idx, 1])
+        xr.DataArray(target_bm.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[idx, 3])
+        xr.DataArray(gen_target_it.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[idx, 2])
+        xr.DataArray(gen_target_bm.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[idx, 4])
+
+    fig.savefig(f'{saving_path}/{counter}.png', format='png', bbox_inches='tight', pad_inches=0.1)
+    # plt.close('all')
+    
+    del image, target_it, target_bm, gen_target_it, gen_target_bm
 
 def plot_examples(inp, tar, gen, saving_path=None):
     
