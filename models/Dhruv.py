@@ -4,21 +4,26 @@ import torch.nn as nn
 class Generator(nn.Module):
     def __init__(self, img_channels=1, num_features=4):
         super().__init__()
-        self.lyr1 = nn.Conv2d(img_channels, num_features, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.lyr1 = nn.Conv2d(img_channels, num_features, kernel_size=3, stride=1, bias=False, padding=1, padding_mode='reflect')
+        self.bn1  = nn.InstanceNorm2d(num_features, affine=True)
         self.act1 = nn.ReLU()
         
-        self.lyr2 = nn.Conv2d(num_features, num_features*2, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.lyr2 = nn.Conv2d(num_features, num_features*2, kernel_size=3, stride=1, bias=False, padding=1, padding_mode='reflect')
+        self.bn2  = nn.InstanceNorm2d(num_features*2, affine=True)
         self.act2 = nn.ReLU()
         
-        self.lyr3 = nn.Conv2d(num_features*2, num_features*4, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.lyr3 = nn.Conv2d(num_features*2, num_features*4, kernel_size=3, stride=1, bias=False, padding=1, padding_mode='reflect')
+        self.bn3  = nn.InstanceNorm2d(num_features*4, affine=True)
         self.act3 = nn.ReLU()
         
         
-        self.lyr4 = nn.Conv2d(num_features*4, num_features*8, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.lyr4 = nn.Conv2d(num_features*4, num_features*8, kernel_size=3, stride=1, bias=False, padding=1, padding_mode='reflect')
+        self.bn4  = nn.InstanceNorm2d(num_features*8, affine=True)
         self.act4 = nn.ReLU()
         
         
-        self.lyr5 = nn.Conv2d(num_features*8, num_features, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.lyr5 = nn.Conv2d(num_features*8, num_features, kernel_size=3, stride=1, bias=False, padding=1, padding_mode='reflect')
+        self.bn4  = nn.InstanceNorm2d(num_features, affine=True)
         self.act5 = nn.ReLU()
         
         self.lyr6 = nn.Conv2d(num_features, 1, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
@@ -45,16 +50,50 @@ class Generator(nn.Module):
             
         return torch.tanh(output)
 
+    
+class DnCNN(nn.Module):
+    def __init__(self, in_channels=1, num_features=64):
+        super().__init__()
+        self.initialization = nn.Sequential(
+            nn.Conv2d(in_channels, num_features, kernel_size=3, padding=1),
+            nn.ReLU()
+        )
+    
+        self.cnn = nn.Sequential(
+            self._block(num_features, num_features, 3, 1, 1),
+            self._block(num_features, num_features, 3, 1, 1),
+            self._block(num_features, num_features, 3, 1, 1),
+            self._block(num_features, num_features, 3, 1, 1),
+            self._block(num_features, num_features, 3, 1, 1),
+            self._block(num_features, num_features, 3, 1, 1)
+        )
+        self.head = nn.Conv2d(num_features, in_channels, kernel_size=3, padding=1)
+    
+    def _block(self, in_channels, out_channels, kernel_size, stride, padding):
+        return nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU()
+        )
+    
+    def forward(self, x):
+        out = self.initialization(x)
+        out = self.cnn(out)
+        out = self.head(out) + x
+        return out
+
 def initialize_weights(model):
     for m in model.modules():
-        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d, nn.BatchNorm2d)):
-            nn.init.kaiming_normal_(m.weight.data)
+        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
+            nn.init.kaiming_normal_(m.weight.data, nonlinearity='relu')
+        elif isinstance(m, (nn.BatchNorm2d)):
+            pass
     
 def main():
     x = torch.randn((4, 1, 256, 256))
     y = torch.randn((4, 1, 256, 256))
     print(x.shape)
-    model = Generator()
+    model = DnCNN()
     print(model(x).shape)
     
 if __name__ == '__main__':
