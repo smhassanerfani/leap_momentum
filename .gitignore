@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+# data
+dataset/
 # Distribution / packaging
 .Python
 build/
@@ -50,7 +51,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-
+outputs/
 # Translations
 *.mo
 *.pot
