@@ -51,57 +51,54 @@ class Agulhas(torch.utils.data.Dataset):
     
     from typing import Any, Callable, Optional, Tuple
 
-    
-class MapDataset(torch.utils.data.Dataset):
-    def __init__(
-        self,
-        X_generator,
-        y_generator,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        joint_transform: Optional[Callable] = None,
-    ) -> None:
-        """
-        PyTorch Dataset adapter for Xbatcher
+class Agulhas2(torch.utils.data.Dataset):
 
-        Parameters
-        ----------
-        X_generator : xbatcher.BatchGenerator
-        y_generator : xbatcher.BatchGenerator
-        transform : callable, optional
-            A function/transform that takes in an array and returns a transformed version.
-        target_transform : callable, optional
-            A function/transform that takes in the target and transforms it.
-        """
-        self.X_generator = X_generator
-        self.y_generator = y_generator
-        self.transform = transform
-        self.target_transform = target_transform
+    def __init__(self, split, joint_transform=None):
+        super(Agulhas2, self).__init__()
+        
+        self.split = split
+        self.inps_mean_std = (-0.4315792, 0.5710749)
+        self.tars_mean_std = (2.9930247e-06, 0.009364196)
+        self.tars_bm_mean_std = (-0.43158054, 0.57093924)
+
+        self.inputs, self.targets, self.targets_bm = self._get_data_array()
         self.joint_transform = joint_transform
 
-    def __len__(self) -> int:
-        return len(self.X_generator)
+        self.inps_transform = T.Compose([T.ToTensor(), T.Normalize(*self.inps_mean_std)])
+        self.tars_transform = T.Compose([T.ToTensor(), T.Normalize(*self.tars_mean_std)])
+        self.tars_bm_transform = T.Compose([T.ToTensor(), T.Normalize(*self.tars_bm_mean_std)])
 
-    def __getitem__(self, idx) -> Tuple[Any, Any]:
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-            if len(idx) == 1:
-                idx = idx[0]
-            else:
-                raise NotImplementedError(
-                    f"{type(self).__name__}.__getitem__ currently requires a single integer key"
-                )
+    def _get_data_array(self):
+        
+        inps_path = os.path.join('dataset', self.split, 'inputs.npy')
+        tars_path = os.path.join('dataset', self.split, 'targets.npy')
+        tars_bm_path = os.path.join('dataset', self.split, 'targets_bm.npy')
+                                 
+        with open(inps_path, 'rb') as f:
+            inputs = np.load(f)
+        
+        with open(tars_path, 'rb') as f:
+            targets = np.load(f)
+        
+        with open(tars_bm_path, 'rb') as f:
+            targets_bm = np.load(f)
+            
+        return inputs, targets, targets_bm
 
-        X_batch = self.X_generator[idx].values
-        y_batch = self.y_generator[idx].values
-
-        if self.transform:
-            X_batch = self.transform(X_batch)
-
-        if self.target_transform:
-            y_batch = self.target_transform(y_batch)
+    def __getitem__(self, index):
+        
+        x = self.inputs[..., index]
+        y = self.targets[..., index]
+        y_bm = self.targets_bm[..., index]
+    
+        x = self.inps_transform(x)
+        y = self.tars_transform(y)
+        y_bm = self.tars_bm_transform(y_bm)
         
         if self.joint_transform:
-            X_batch, y_batch = self.joint_transform([X_batch, y_batch])
-        
-        return X_batch, y_batch
+            x, y, y_bm = self.joint_transform(x, y, y_bm)
+
+        return x, y, y_bm
+
+    def __len__(self):
+        return self.inputs.shape[2]
