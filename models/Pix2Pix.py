@@ -8,8 +8,8 @@ class DBlock(nn.Module):
         super(DBlock, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=stride, padding=1, padding_mode='reflect'),
-            # nn.BatchNorm2d(out_channels),
-            nn.InstanceNorm2d(out_channels, affine=True),
+            nn.BatchNorm2d(out_channels),
+            # nn.InstanceNorm2d(out_channels, affine=True),
             nn.LeakyReLU(0.2)
         )
 
@@ -53,8 +53,8 @@ class GBlock(nn.Module):
             nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1, bias=False, padding_mode='reflect')
             if encoder
             else nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1, bias=False),
-            # nn.BatchNorm2d(out_channels),
-            nn.InstanceNorm2d(out_channels, affine=True),
+            nn.BatchNorm2d(out_channels),
+            # nn.InstanceNorm2d(out_channels, affine=True),
             nn.ReLU() if act == 'ReLU' else nn.LeakyReLU(0.2)
         )
         self.use_dropout = use_dropout
@@ -114,3 +114,16 @@ class Generator(nn.Module):
         de6 = self.decode6(torch.cat([de5, en2], dim=1))
         de7 = self.decode7(torch.cat([de6, en1], dim=1))
         return self.final_decode(torch.cat([de7, en0], dim=1))
+  
+    
+def initialize_weights(model):
+    for m in model.modules():
+        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d, nn.BatchNorm2d)):
+            nn.init.normal_(m.weight.data, 0.0, 0.02)
+def main():
+    x = torch.randn((1, 1, 256, 256))
+    y = torch.randn((1, 1, 256, 256))
+    disc = Discriminator(in_channels=1)
+    print(disc(x, y).shape)
+if __name__ == '__main__':
+    main()
