@@ -55,25 +55,25 @@ class DnCNN(nn.Module):
     def __init__(self, in_channels=1, num_features=64):
         super().__init__()
         self.initialization = nn.Sequential(
-            nn.Conv2d(in_channels, num_features, kernel_size=3, padding=1),
-            nn.ReLU()
+            nn.Conv2d(in_channels, num_features, kernel_size=3, padding=1, padding_mode='reflect'),
+            nn.PReLU()
         )
     
         self.cnn = nn.Sequential(
-            self._block(num_features, num_features, 3, 1, 1),
-            self._block(num_features, num_features, 3, 1, 1),
-            self._block(num_features, num_features, 3, 1, 1),
-            self._block(num_features, num_features, 3, 1, 1),
-            self._block(num_features, num_features, 3, 1, 1),
-            self._block(num_features, num_features, 3, 1, 1)
+            self._block(num_features, num_features*2, 3, 1, 1),
+            self._block(num_features*2, num_features*2, 3, 1, 1),
+            self._block(num_features*2, num_features*2, 3, 1, 1),
+            self._block(num_features*2, num_features*2, 3, 1, 1),
+            self._block(num_features*2, num_features*2, 3, 1, 1),
+            self._block(num_features*2, num_features, 3, 1, 1)
         )
-        self.head = nn.Conv2d(num_features, in_channels, kernel_size=3, padding=1)
+        self.head = nn.Conv2d(num_features, in_channels, kernel_size=3, padding=1, padding_mode='reflect')
     
     def _block(self, in_channels, out_channels, kernel_size, stride, padding):
         return nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, bias=False),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU()
+            nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, padding_mode='reflect', bias=False),
+            nn.InstanceNorm2d(out_channels, affine=True),
+            nn.PReLU()
         )
     
     def forward(self, x):
@@ -81,6 +81,20 @@ class DnCNN(nn.Module):
         out = self.cnn(out)
         out = self.head(out) + x
         return out
+
+
+class CNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.cnn = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=7, padding=(3,3)), nn.PReLU(),
+            nn.Conv2d(in_channels=8, out_channels=8, kernel_size=7, padding=(3,3)), nn.PReLU(),
+            nn.Conv2d(in_channels=8, out_channels=8, kernel_size=7, padding=(3,3)), nn.PReLU(),
+            nn.Conv2d(in_channels=8, out_channels=8, kernel_size=7, padding=(3,3)), nn.PReLU(),
+            nn.Conv2d(in_channels=8, out_channels=8, kernel_size=7, padding=(3,3)), nn.PReLU()
+                     )
+    def forward(self, x):
+        return self.cnn(x)
 
 def initialize_weights(model):
     for m in model.modules():
