@@ -7,10 +7,10 @@ class DBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=2):
         super(DBlock, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=stride, padding=1, padding_mode='reflect'),
-            nn.BatchNorm2d(out_channels),
-            # nn.InstanceNorm2d(out_channels, affine=True),
-            nn.LeakyReLU(0.2)
+            nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=stride, bias=False, b padding=1, padding_mode='reflect'),
+            # nn.BatchNorm2d(out_channels),
+            nn.InstanceNorm2d(out_channels, affine=True),
+            nn.LeakyReLU(0.2, inplace=True)
         )
 
     def forward(self, x):
@@ -23,7 +23,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.initial_layer = nn.Sequential(
             nn.Conv2d(in_channels*2, features[0], kernel_size=4, stride=2, padding=1, padding_mode='reflect'),
-            nn.LeakyReLU(0.2)
+            nn.LeakyReLU(0.2, inplace=True)
         )
 
         layers = []
@@ -53,12 +53,12 @@ class GBlock(nn.Module):
             nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1, bias=False, padding_mode='reflect')
             if encoder
             else nn.ConvTranspose2d(in_channels, out_channels, kernel_size=4, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(out_channels),
-            # nn.InstanceNorm2d(out_channels, affine=True),
+            # nn.BatchNorm2d(out_channels),
+            nn.InstanceNorm2d(out_channels, affine=True),
             nn.ReLU() if act == 'ReLU' else nn.LeakyReLU(0.2)
         )
         self.use_dropout = use_dropout
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout2d(0.5)
 
     def forward(self, x):
         x = self.conv(x)
@@ -71,7 +71,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         self.initial_encoder = nn.Sequential(
             nn.Conv2d(in_channels, features, kernel_size=4, stride=2, padding=1, padding_mode='reflect'),
-            nn.LeakyReLU(0.2)
+            nn.LeakyReLU(0.2, inplace=True)
         )
         self.encode1 = GBlock(features, features*2, encoder=True, act='LeakyReLU', use_dropout=False)
         self.encode2 = GBlock(features*2, features*4, encoder=True, act='LeakyReLU', use_dropout=False)
@@ -82,7 +82,8 @@ class Generator(nn.Module):
 
         self.bottleneck = nn.Sequential(
             nn.Conv2d(features*8, features*8, kernel_size=4, stride=2, padding=1, padding_mode='reflect'),
-            nn.ReLU()
+            # nn.ReLU()
+            nn.LeakyReLU(0.2, inplace=True)
         )
 
         self.decode1 = GBlock(features*8, features*8, encoder=False, act='ReLU', use_dropout=True)
@@ -118,7 +119,7 @@ class Generator(nn.Module):
     
 def initialize_weights(model):
     for m in model.modules():
-        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d, nn.BatchNorm2d)):
+        if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
             nn.init.normal_(m.weight.data, 0.0, 0.02)
 def main():
     x = torch.randn((1, 1, 256, 256))
