@@ -134,7 +134,7 @@ def save_examples3(x, y, y_fake, transform_params, counter, saving_path):
         image = image * (transform_params['inputs'][1] - transform_params['inputs'][0]) + transform_params['inputs'][0]
         
         target_it = target_it * (transform_params['targets_it'][1] - transform_params['targets_it'][0]) + transform_params['targets_it'][0]
-        targets_bm = targets_bm * (transform_params['targets_bm'][1] - transform_params['targets_bm'][0]) + transform_params['targets_bm'][0]
+        target_bm = target_bm * (transform_params['targets_bm'][1] - transform_params['targets_bm'][0]) + transform_params['targets_bm'][0]
         
         gen_target_it = gen_target_it * (transform_params['targets_it'][1] - transform_params['targets_it'][0]) + transform_params['targets_it'][0]
         gen_target_bm = gen_target_bm * (transform_params['targets_bm'][1] - transform_params['targets_bm'][0]) + transform_params['targets_bm'][0]
