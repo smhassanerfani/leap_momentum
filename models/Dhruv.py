@@ -61,10 +61,10 @@ class DnCNN(nn.Module):
     
         self.cnn = nn.Sequential(
             self._block(num_features, num_features*2, 3, 1, 1),
-            self._block(num_features*2, num_features*2, 3, 1, 1),
-            self._block(num_features*2, num_features*2, 3, 1, 1),
-            self._block(num_features*2, num_features*2, 3, 1, 1),
-            self._block(num_features*2, num_features*2, 3, 1, 1),
+            self._block(num_features*2, num_features*4, 3, 1, 1),
+            self._block(num_features*4, num_features*4, 3, 1, 1),
+            self._block(num_features*4, num_features*4, 3, 1, 1),
+            self._block(num_features*4, num_features*2, 3, 1, 1),
             self._block(num_features*2, num_features, 3, 1, 1)
         )
         self.head = nn.Conv2d(num_features, in_channels, kernel_size=3, padding=1, padding_mode='reflect')
@@ -80,7 +80,7 @@ class DnCNN(nn.Module):
         out = self.initialization(x)
         out = self.cnn(out)
         out = self.head(out) + x
-        return out
+        return torch.tanh(out)
 
 
 class CNN(nn.Module):
