@@ -104,7 +104,7 @@ class Agulhas2(torch.utils.data.Dataset):
 class Agulhas3(torch.utils.data.Dataset):
 
     def __init__(self, split, joint_transform=None):
-        super(Agulhas2, self).__init__()
+        super(Agulhas3, self).__init__()
         
         self.split = split
         self.inps_min_max = (-2.0309153, 1.098078)
