@@ -7,7 +7,7 @@ class DBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=2):
         super(DBlock, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=stride, bias=False, b padding=1, padding_mode='reflect'),
+            nn.Conv2d(in_channels, out_channels, kernel_size=4, stride=stride, bias=False, padding=1, padding_mode='reflect'),
             # nn.BatchNorm2d(out_channels),
             nn.InstanceNorm2d(out_channels, affine=True),
             nn.LeakyReLU(0.2, inplace=True)
