@@ -154,13 +154,13 @@ def plot_examples(inp, tar, gen, saving_path=None):
     fig, axes = plt.subplots(nrows= 1, ncols=3, figsize=(12, 3), constrained_layout=True)
 
     xr.DataArray(inp.squeeze(), dims=['x', 'y']).plot(x="x", y="y", vmax=inp.max(), vmin=inp.min(), robust=True, yincrease=False, cmap='RdBu_r', ax=axes[0])
-    axes[0].set_title('Raw SSH')
+    axes[0].set_title('RAW SSH')
     
     xr.DataArray(tar.squeeze(), dims=['x', 'y']).plot(x="x", y="y", vmax=tar.max(), vmin=tar.min(), robust=True, yincrease=False, cmap='RdBu_r', ax=axes[1])
-    axes[1].set_title('Internal Tides')
+    axes[1].set_title('GT')
     
     xr.DataArray(gen.squeeze(), dims=['x', 'y']).plot(x="x", y="y", vmax=tar.max(), vmin=tar.min(), robust=True, yincrease=False, cmap='RdBu_r', ax=axes[2])
-    axes[2].set_title('Internal Tides (M)')
+    axes[2].set_title('MODEL')
     
     if saving_path:
         plt.savefig(f'{saving_path}/{counter}.png', format='png', bbox_inches='tight', pad_inches=0.1)
