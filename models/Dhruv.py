@@ -43,8 +43,8 @@ def initialize_weights(model):
     for m in model.modules():
         if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
             nn.init.kaiming_normal_(m.weight.data, nonlinearity='relu')
-        elif isinstance(m, (nn.BatchNorm2d)):
-            pass
+        elif isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d)):
+            nn.init.constant_(m.weight.data, 1.25)
     
 def main():
     x = torch.randn((4, 1, 256, 256))
