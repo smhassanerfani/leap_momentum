@@ -6,7 +6,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import torchvision
 from joint_transforms import Transform2
-from models.Dhruv import Generator, DnCNN, initialize_weights
+from models.Dhruv import DnCNN, initialize_weights
 from dataset import Agulhas2, Agulhas3
 from utils.utils import AdjustLearningRate, save_checkpoint, save_examples2, save_examples3
 
@@ -15,21 +15,21 @@ def val_loop(dataloader, transform_params, model, saving_path):
 
     model.eval()
     with torch.no_grad():
-        for counter, (x, y_it, y_bm) in enumerate(dataloader, 1):
+        for counter, (ssh, it, bm) in enumerate(dataloader, 1):
 
             # GPU deployment
-            x = x.cuda()
-            y_it = y_it.cuda()
-            y_bm = y_bm.cuda()
+            ssh = ssh.cuda()
+            it = it.cuda()
+            bm = bm.cuda()
 
             # Compute prediction and loss
-            y_bm_fake = model(x)
-            y_it_fake = x - y_bm_fake
+            bm_, it_ = model(ssh)
             
-            y_fake = torch.cat([y_it_fake, y_bm_fake], dim=1)
-            y = torch.cat([y_it, y_bm], dim=1)
+            y = torch.cat([it, bm], dim=1)
+            y_ = torch.cat([it_, bm_], dim=1)
 
-            save_examples3(x, y, y_fake, transform_params, counter, saving_path)
+            save_examples3(ssh, y, y_, transform_params, counter, saving_path)
+            
             if counter == 5:
                 break
 
@@ -58,7 +58,7 @@ model = DnCNN(CHANNELS_IMG, FEATURES).to(device)
 initialize_weights(model)
 
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-criterion = nn.L1Loss()
+criterion = nn.MSELoss()
 
 # max_iter = NUM_EPOCHS * len(dataloader.dataset)
 # scheduler = AdjustLearningRate(optimizer, LEARNING_RATE, max_iter, 0.9)
@@ -73,12 +73,11 @@ for epoch in range(NUM_EPOCHS):
         it = it.to(device)
         bm = bm.to(device)
 
-        bm_out = model(ssh)
-        it_out = ssh - bm_out
+        bm_, it_ = model(ssh)
         
-        loss1 = criterion(bm_out, bm)
-        loss2 = criterion(it_out, it)
-        loss = (loss1 + loss2) / 2
+        bm_loss = criterion(bm_, bm)
+        it_loss = criterion(it_, it)
+        loss = (bm_loss + it_loss) / 2
 
         optimizer.zero_grad()
         loss.backward()
@@ -89,9 +88,9 @@ for epoch in range(NUM_EPOCHS):
 
         if batch_idx % 100 == 0:
             print(f"Epoch: [{epoch}/{NUM_EPOCHS}] Batch: {batch_idx:>2}/{len(dataloader)} Loss: {loss.item():.4f},")
-            loss_list.append([loss1.item(), loss2.item()])
+            loss_list.append([bm_loss.item(), it_loss.item()])
     
-    current_dir = os.path.join('outputs', 'DnCNN', 'T05', f'epoch-{epoch:003d}')
+    current_dir = os.path.join('outputs', 'DnCNN', 'T06', f'epoch-{epoch:003d}')
     
     try:
         os.makedirs(current_dir)
