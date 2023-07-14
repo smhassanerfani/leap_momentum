@@ -1,5 +1,5 @@
 import torch
-from utils import save_examples
+from utils import save_examples, save_examples3
 
 def train_loop(discriminator, generator, dataloader, disc_optimizer, gen_optimizer, bce_loss, l1_loss, l1_lambda):
     
@@ -8,7 +8,7 @@ def train_loop(discriminator, generator, dataloader, disc_optimizer, gen_optimiz
     logger = dict()
     running_disc_loss = 0.0
     running_gen_loss = 0.0
-    for batch, (x, y) in enumerate(dataloader, 1):
+    for batch, (x, y, _) in enumerate(dataloader, 1):
         
         # GPU deployment
         x = x.cuda()
@@ -60,15 +60,21 @@ def val_loop(dataloader, transform_params, model, saving_path):
 
     model.eval()
     with torch.no_grad():
-        for counter, (x, y) in enumerate(dataloader, 1):
+        for counter, (ssh, it, bm) in enumerate(dataloader, 1):
 
             # GPU deployment
-            x = x.cuda()
-            y = y.cuda()
+            ssh = ssh.cuda()
+            it = it.cuda()
+            bm = bm.cuda()
 
             # Compute prediction and loss
-            y_fake = model(x)
+            it_ = model(ssh)
+            bm_ = ssh - it_
+            
+            y = torch.cat([it, bm], dim=1)
+            y_ = torch.cat([it_, bm_], dim=1)
 
-            save_examples(x, y, y_fake, transform_params, counter, saving_path)
+            save_examples3(ssh, y, y_, transform_params, counter, saving_path)
+            
             if counter == 5:
                 break
