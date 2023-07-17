@@ -4,8 +4,8 @@ import torchvision.transforms.functional as TF
 
 class RandomChoice(torch.nn.Module):
     def __init__(self, transforms):
-       super().__init__()
-       self.transforms = transforms
+        super().__init__()
+        self.transforms = transforms
 
     def __call__(self, imgs):
         t = random.choice(self.transforms)
@@ -14,7 +14,7 @@ class RandomChoice(torch.nn.Module):
 class Transform(torch.nn.Module):
     
     def __init__(self, resize=None, crop=None):
-       super().__init__()
+        super().__init__()
         self.resize = resize
         self.crop = crop
 
@@ -49,7 +49,7 @@ class Transform(torch.nn.Module):
 class Transform2(torch.nn.Module):
     
     def __init__(self, resize=None, crop=None):
-       super().__init__()
+        super().__init__()
         self.resize = resize
         self.crop = crop
 
