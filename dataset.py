@@ -4,6 +4,7 @@ import numpy as np
 import torchvision.transforms as T
 from typing import Any, Callable, Optional, Tuple
 
+
 class Agulhas(torch.utils.data.Dataset):
 
     def __init__(self, split, joint_transform=None):
@@ -49,8 +50,6 @@ class Agulhas(torch.utils.data.Dataset):
         return self.inputs.shape[2]
 
     
-    from typing import Any, Callable, Optional, Tuple
-
 class Agulhas2(torch.utils.data.Dataset):
 
     def __init__(self, split, joint_transform=None):
@@ -60,6 +59,12 @@ class Agulhas2(torch.utils.data.Dataset):
         self.inps_mean_std = (-0.4315792, 0.5710749)
         self.tars_mean_std = (2.9930247e-06, 0.009364196)
         self.tars_bm_mean_std = (-0.43158054, 0.57093924)
+        
+        self.transform_dict = {
+            'inputs' : (-0.4315792, 0.5710749),
+            'targets_it': (2.9930247e-06, 0.009364196),
+            'targets_bm': (-0.43158054, 0.57093924)
+                              }
 
         self.inputs, self.targets, self.targets_bm = self._get_data_array()
         self.joint_transform = joint_transform
