@@ -96,11 +96,11 @@ def save_examples2(x, y, y_fake, transform_params, counter, saving_path):
     
     for idx in range(x.shape[0]):
     
-        image = x[idx].detach().cpu().numpy() * transform_params['inputs_std'] + transform_params['inputs_mean']
-        target_it = y[idx, 0, ...].detach().cpu().numpy() * transform_params['targets_std'] + transform_params['targets_mean']
-        target_bm = y[idx, 1, ...].detach().cpu().numpy() * transform_params['targets_bm_std'] + transform_params['targets_bm_mean']
-        gen_target_it = y_fake[idx, 0, ...].detach().cpu().numpy() * transform_params['targets_std'] + transform_params['targets_mean']
-        gen_target_bm = y_fake[idx, 1, ...].detach().cpu().numpy() * transform_params['targets_bm_std'] + transform_params['targets_bm_mean']
+        image = x[idx].detach().cpu().numpy() * transform_params['inputs'][1] + transform_params['inputs'][0]
+        target_it = y[idx, 0, ...].detach().cpu().numpy() * transform_params['targets_it'][1] + transform_params['targets_it'][0]
+        target_bm = y[idx, 1, ...].detach().cpu().numpy() * transform_params['targets_bm'][1] + transform_params['targets_bm'][0]
+        gen_target_it = y_fake[idx, 0, ...].detach().cpu().numpy() * transform_params['targets_it'][1] + transform_params['targets_it'][0]
+        gen_target_bm = y_fake[idx, 1, ...].detach().cpu().numpy() * transform_params['targets_bm'][1] + transform_params['targets_bm'][0]
 
         xr.DataArray(image.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[idx, 0])
         xr.DataArray(target_it.squeeze(), dims=['x', 'y']).plot(x="x", y="y", robust=True, yincrease=False, ax=axes[idx, 1])
