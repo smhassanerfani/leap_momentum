@@ -104,7 +104,9 @@ class Agulhas2(torch.utils.data.Dataset):
             x, y, y_bm = self.joint_transform(x, y, y_bm)
 
         return x, y, y_bm
-
+    
+    def __len__(self):
+        return self.inputs.shape[2]
     
 class Agulhas3(torch.utils.data.Dataset):
 
