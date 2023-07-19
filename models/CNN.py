@@ -15,4 +15,5 @@ class CNN(nn.Module):
     def forward(self, x):
         x = self.CNN(x)
         return x
-        
+
+# https://towardsdatascience.com/pitfalls-with-dropout-and-batchnorm-in-regression-problems-39e02ce08e4d
