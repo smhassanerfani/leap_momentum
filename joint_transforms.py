@@ -1,5 +1,6 @@
 import torch
 import random
+import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 
 class RandomChoice(torch.nn.Module):
