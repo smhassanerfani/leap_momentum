@@ -49,7 +49,8 @@ def save_checkpoint(model, optimizer, filename):
         "optimizer": optimizer.state_dict(),
     }
     torch.save(checkpoint, filename)
-
+    
+    
 def load_checkpoint(checkpoint_file, model, optimizer, lr):
     print("Loading Checkpoint...")
     checkpoint = torch.load(checkpoint_file)
@@ -60,6 +61,34 @@ def load_checkpoint(checkpoint_file, model, optimizer, lr):
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
 
+# def save_checkpoint(model, optimizer, learning_rate=None, epoch=None):
+
+#     print('Saving Checkpoint...')
+#     checkpoint = {
+#         'model_state_dict': model.state_dict(),
+#         'optimizer_state_dict': optimizer.state_dict(),
+#         'learning_rate': learning_rate,
+#         'epoch': epoch
+#     }
+#     torch.save(checkpoint, filename)
+
+# def load_checkpoint(checkpoint_file, model, optimize=None, lr=None):
+    
+#     checkpoint = torch.load(checkpoint_file)
+#     print('Number of Epochs: ', checkpoint['epoch'])
+#     print('Learning Rate: ', checkpoint['learning_rate'])
+#     model.load_state_dict(checkpoint['model_state_dict'])
+    
+#     if optimizer is not None:
+#         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+      
+#     if lr is not None:
+#         for param_group in optimizer.param_groups:
+#             param_group['lr'] = lr
+    
+#     elif checkpoint['learning_rate'] is not None:
+#         for param_group in optimizer.param_groups:
+#             param_group['lr'] = checkpoint['learning_rate']
 
 def save_examples(x, y, y_fake, transform_params, counter, saving_path):
     import matplotlib
