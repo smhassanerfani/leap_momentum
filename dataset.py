@@ -191,9 +191,8 @@ class Agulhas4(torch.utils.data.Dataset):
         self.joint_transform = joint_transform
         self.transform = T.ToTensor()
         
-        
-        
         self.ssh, self.bms, self.its = self._get_data_array()
+    
     
     def _get_data_array(self):
         
@@ -204,45 +203,34 @@ class Agulhas4(torch.utils.data.Dataset):
         data_path = f'{PERSISTENT_BUCKET}/LLC4320/dataset/{self.split}.zarr'
 
         ds = xr.open_zarr(data_path)
+                
+        return ds['SSH'], ds['BMs'], ds['ITs']
         
-        if self.split == 'val':
-            
-            return ds['SSH'], ds['BMs'], ds['ITs']
         
-        return ds['SSH'], ds['ITs']
-
     def __getitem__(self, index):
         
         x  = self.ssh[..., index].values
+        bm = self.bms[..., index].values
         it = self.its[..., index].values
     
         x  = (x - self.ssh_min_max[0]) / (self.ssh_min_max[1] - self.ssh_min_max[0])
+        bm = (bm - self.bms_min_max[0]) / (self.bms_min_max[1] - self.bms_min_max[0])
         it = (it - self.its_min_max[0]) / (self.its_min_max[1] - self.its_min_max[0])
         
         x = 2 * x - 1
+        bm = 2 * bm - 1
         it = 2 * it - 1
         
         x  = self.transform(x)
-        it = self.transform(it)
-        
-        if self.split == 'val':
+        bm = self.transform(bm)
+        it = self.transform(it)           
             
-            bm = self.bms[..., index].values
-            bm = (bm - self.bms_min_max[0]) / (self.bms_min_max[1] - self.bms_min_max[0])
-            bm = 2 * bm - 1
-            bm = self.transform(bm)
-            
-            if self.joint_transform:
-                x, bm, it = self.joint_transform(x, bm, it)
-
-            return x, bm, it
-        
         if self.joint_transform:
-            x, it = self.joint_transform(x, it)
+            x, bm, it = self.joint_transform(x, bm, it)
+
+        return x, bm, it
         
-        return x, it
-    
-    
+        
     def __len__(self):
         return self.ssh.shape[0]
     
@@ -253,7 +241,7 @@ def main():
     dataiter = iter(dataset)
     x, y1, y2 = next(dataiter)
     print(x.shape, y1.shape, y2.shape)
-    print(x)
+
     
 if __name__ == '__main__':
     main()
