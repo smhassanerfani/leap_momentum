@@ -171,3 +171,89 @@ class Agulhas3(torch.utils.data.Dataset):
     
     def __len__(self):
         return self.inputs.shape[2]
+
+    
+class Agulhas4(torch.utils.data.Dataset):
+
+    def __init__(self, split, joint_transform=None):
+        super(Agulhas4, self).__init__()
+        
+        self.split = split
+        self.ssh_min_max = (-2.0346121788024902, 1.1185286045074463)
+        self.bms_min_max = (-2.0395283699035645, 1.1078916788101196)
+        self.its_min_max = (-0.1476919949054718, 0.12447834014892578)
+        
+        self.transform_dict = {'ssh': self.ssh_min_max,
+                               'bms': self.bms_min_max,
+                               'its': self.its_min_max
+                              }
+        
+        self.joint_transform = joint_transform
+        self.transform = T.ToTensor()
+        
+        
+        
+        self.ssh, self.bms, self.its = self._get_data_array()
+    
+    def _get_data_array(self):
+        
+        import os
+        import xarray as xr
+
+        PERSISTENT_BUCKET = os.environ['PERSISTENT_BUCKET']
+        data_path = f'{PERSISTENT_BUCKET}/LLC4320/dataset/{self.split}.zarr'
+
+        ds = xr.open_zarr(data_path)
+        
+        if self.split == 'val':
+            
+            return ds['SSH'], ds['BMs'], ds['ITs']
+        
+        return ds['SSH'], ds['ITs']
+
+    def __getitem__(self, index):
+        
+        x  = self.ssh[..., index].values
+        it = self.its[..., index].values
+    
+        x  = (x - self.ssh_min_max[0]) / (self.ssh_min_max[1] - self.ssh_min_max[0])
+        it = (it - self.its_min_max[0]) / (self.its_min_max[1] - self.its_min_max[0])
+        
+        x = 2 * x - 1
+        it = 2 * it - 1
+        
+        x  = self.transform(x)
+        it = self.transform(it)
+        
+        if self.split == 'val':
+            
+            bm = self.bms[..., index].values
+            bm = (bm - self.bms_min_max[0]) / (self.bms_min_max[1] - self.bms_min_max[0])
+            bm = 2 * bm - 1
+            bm = self.transform(bm)
+            
+            if self.joint_transform:
+                x, bm, it = self.joint_transform(x, bm, it)
+
+            return x, bm, it
+        
+        if self.joint_transform:
+            x, it = self.joint_transform(x, it)
+        
+        return x, it
+    
+    
+    def __len__(self):
+        return self.ssh.shape[0]
+    
+
+def main():
+    dataset = Agulhas4('val', joint_transform=None)
+    print(len(dataset))
+    dataiter = iter(dataset)
+    x, y1, y2 = next(dataiter)
+    print(x.shape, y1.shape, y2.shape)
+    print(x)
+    
+if __name__ == '__main__':
+    main()
